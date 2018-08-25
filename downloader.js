@@ -51,6 +51,7 @@ function Downloader(fileUrl, options, callback) {
     var rOptions = {
         method: 'GET',
         uri: fileUrl,
+        forever: true, // http keep-alive
         headers: {"User-Agent": userAgent}
     };
 
