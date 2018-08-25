@@ -14,8 +14,6 @@ var unzip = require('unzip');
 //     ext: '.zip',
 //     name: 'file' }
 
-// Todo: implement the resume/retry
-
 function getFileName(fileUrl) {
     return fileUrl.split('/').pop().split('#')[0].split('?')[0];
 }
@@ -39,6 +37,7 @@ function Downloader(fileUrl, options, callback) {
     var userAgent = options.userAgent || "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 Chrome/68.0.3440.59 Safari/537.36 Nodejs/6";
     var overwrite = options.overwrite || false;
     var verbage = options.verbage || false;
+    var resumable=false;
 
     var stats = {
         time: 0,
@@ -62,8 +61,27 @@ function Downloader(fileUrl, options, callback) {
         callback(stats);
     }
 
+    function setRemoteFileSize(callback){
+        var options = {
+            uri : fileUrl,
+            method : 'HEAD',
+            followAllRedirects : true,
+            followOriginalHttpMethod : true,
+            headers : {"User-Agent" : userAgent}
+        }
+        r = request(options)
+            .on("response",function(res){
+                stats.remoteFileSize = parseInt(res.headers['content-length'], 10);
+                callback();
+            })
+            .on("err",function(err){
+                throw err;
+            })
+    }
+
     function decomp(file, callback) {
         if (autoUnzip) {
+            if(verbage){console.log("Extracting ", filePath)}
             var extractor = unzip.Extract({path: path.parse(filePath).dir});
             fs.createReadStream(file).pipe(extractor);
             extractor.on('error', function (err) {
@@ -78,115 +96,112 @@ function Downloader(fileUrl, options, callback) {
         }
     }
 
-    function retry(fileStream, res) {
-        var conentlength = parseInt(res.headers['content-length'], 10);
-        //Range: bytes=0-1023
-        var requestOptions = {
-            method: "GET",
-            url: fileUrl,
-            headers: {'Range': 'bytes=' + file.length + "-", "User-Agent": userAgent}
-        };
-        var r = request(options)
-            .on("data", function (chunk) {
-                file.write(chunk);
-                bytesDownloaded += chunk.toString().length;
-            })
-            .on("err", function (err) {
-                if (verbage) {
-                    console.log("Download Error, retrying in 5 seconds...");
-                }
-                setTimeout(function () {
-                    resume();
-                }, 5000)
-            })
-            .on('end', function () {
-                // fin()
-            });
-    }
+    var file; // the download buffer
+    var bar;
+    function continueDownload() {
 
-    function continueDownload(res) {
         if(verbage){console.log(fileUrl,"=>",filePath)};
 
-        var file = fs.createWriteStream(filePath);
+        if(!file){
+            // the checkResumeState already added stats.bytesDownloaded, so don't worry
+            file = fs.createWriteStream(filePath+".temp",{flags:"a+"})
+                .on("finish",function(){
+                    fs.rename(filePath+".temp",filePath,function(err){
+                        if (filePath.slice(-4).toLowerCase() == ".zip") {
+                            decomp(filePath, fin)
+                        }
+                        else {
+                            fin();
+                        }
+                    })
+                });
+        }
+        else{
+            // must be a resume here.
+            rOptions.headers.Range="bytes="+stats.bytesDownloaded+"-";
+            if(verbage){console.log('resuming..')}
+        }
 
-        if (options.progress) {
-            var bar = new Progress.Bar({}, Progress.Presets.shades_classic);
+        if (options.progress && ! bar) {
+            bar = new Progress.Bar({}, Progress.Presets.shades_classic);
             bar.start(stats.remoteFileSize, 0);
         }
-        res.on('data', function (chunk) {
+
+        r=request(rOptions)
+            .on('data', function (chunk) {
             file.write(chunk, 'binary', function () {
                 stats.bytesDownloaded += chunk.length;
                 if (bar) {
                     bar.update(stats.bytesDownloaded)
                 }
             });
-        }).on('end', function (endData) {
-            if (bar) {
-                bar.stop()
+            }).on('end', function () {
+                if (stats.bytesDownloaded==stats.remoteFileSize){
+                    if (bar) {bar.stop()}
+                    if (verbage) {console.log("Download complete.")};
+                    // the callback will commence upon file write complete.
+                }
+                else{
+                    if(verbage){console.log("connection interrupted")}
+                    continueDownload()
+                }
+                file.end();
+            }).on('error', function (err) {
+                throw err;
+                if (bar) { bar.stop()};
+            });
+    }
+
+    function checkResumeState(next){
+        fs.exists(filePath+".temp",function(exists){
+            if(exists){
+                if(verbage){"temp file found, resuming download"}
+                fs.stat(filePath+".temp",function(fileStats){
+                    stats.bytesDownloaded=fileStats.size;
+                    resumable=true;
+                    rOptions.headers["Range"]= "bytes="+String(stats.bytesDownloaded)+"-";
+                    next();
+                })
             }
-            if (verbage) {
-                console.log("Download complete.")
+            else{
+                next();
             }
-            ;
-            file.end();
-            if (filePath.slice(-4).toLowerCase() == ".zip") {
-                decomp(filePath, fin)
-            }
-            else {
-                fin();
-            }
-        }).on('error', function (err) {
-            throw err;
-            file.end();
-            if (bar) {
-                bar.stop()
-            }
-            ;
-        });
+        })
     }
 
     function start() {
-        var r = request(rOptions)
-            .on('response', function (res) {
-                stats.remoteFileSize = parseInt(res.headers['content-length'], 10);
-                if (overwrite) {
-                    continueDownload(r)
+        setRemoteFileSize(function () {
+            fs.exists(filePath, function (exists) {
+                if (exists) {
+                    // see if its the right size
+                    if (overwrite) {
+                        continueDownload()
+                    }
+                    else {
+                        fs.stat(filePath, function (err, fileStats) {
+                            if (fileStats.size == stats.remoteFileSize) {
+                                if (verbage) {
+                                    console.log("Local file equal to remote file.", fileStats.size, "==", stats.remoteFileSize)
+                                };
+                                fin();
+                            }
+                            else {
+                                if (verbage) {
+                                    console.log("Local file not equal to remote file.", fileStats.size, "!=", stats.remoteFileSize)
+                                };
+                                continueDownload()
+                            }
+                        })
+                    }
                 }
                 else {
-                    // check if there's a local file already
-                    fs.exists(filePath, function (exists) {
-                        if (exists) {
-                            // see if its the right size
-                            fs.stat(filePath, function (err, fileStats) {
-                                if (fileStats.size == stats.remoteFileSize) {
-                                    if (verbage) {
-                                        console.log("Local file equal to remote file.", fileStats.size, "==", stats.remoteFileSize)
-                                    }
-                                    ;
-                                    r.abort();
-                                    fin();
-                                }
-                                else {
-                                    if (verbage) {
-                                        console.log("Local file not equal to remote file.", fileStats.size, "!=", stats.remoteFileSize)
-                                    }
-                                    ;
-                                    continueDownload(r)
-                                }
-                            })
-                        }
-                        else {
-                            continueDownload(r)
-                        }
-                    });
+                    continueDownload()
                 }
-
-            })
+            });
+        })
     }
 
-    if (autoStart) {
-        start()
-    }
+    checkResumeState(start)
 }
 
 module.exports = Downloader;
