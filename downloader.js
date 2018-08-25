@@ -34,10 +34,11 @@ function Downloader(fileUrl, options, callback) {
     var autoStart = options.start || true;
     var resume = options.resume || true;
     var retryInterval = options.retryInterval || 5000;
-    options["cli-progress"] = options["cli-progress"] || false;
+    var progress = options.progress || true;
     var autoUnzip = options.unzip || true;  // if the file is a .zip, extract the contents
     var userAgent = options.userAgent || "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 Chrome/68.0.3440.59 Safari/537.36 Nodejs/6";
     var overwrite = options.overwrite || false;
+    var verbage = options.verbage || false;
 
     var stats = {
         time: 0,
@@ -89,7 +90,9 @@ function Downloader(fileUrl, options, callback) {
                 bytesDownloaded += chunk.toString().length;
             })
             .on("err", function (err) {
-                console.log("Download Error, retrying in 5 seconds...");
+                if (verbage) {
+                    console.log("Download Error, retrying in 5 seconds...");
+                }
                 setTimeout(function () {
                     resume();
                 }, 5000)
@@ -102,7 +105,7 @@ function Downloader(fileUrl, options, callback) {
     function continueDownload(res) {
         var file = fs.createWriteStream(filePath);
 
-        if (options["cli-progress"]) {
+        if (options.progress) {
             var bar = new Progress.Bar({}, Progress.Presets.shades_classic);
             bar.start(stats.remoteFileSize, 0);
         }
@@ -118,7 +121,10 @@ function Downloader(fileUrl, options, callback) {
             if (bar) {
                 bar.stop()
             }
-            //console.log("Download complete.");
+            if (verbage) {
+                console.log("Download complete.")
+            }
+            ;
             file.end();
             if (filePath.slice(-4).toLowerCase() == ".zip") {
                 decomp(filePath, fin)
@@ -151,12 +157,18 @@ function Downloader(fileUrl, options, callback) {
                             // see if its the right size
                             fs.stat(filePath, function (err, fileStats) {
                                 if (fileStats.size == stats.remoteFileSize) {
-                                    console.log("Local file equal to remote file.", fileStats.size, "==", stats.remoteFileSize);
+                                    if (verbage) {
+                                        console.log("Local file equal to remote file.", fileStats.size, "==", stats.remoteFileSize)
+                                    }
+                                    ;
                                     r.abort();
                                     fin();
                                 }
                                 else {
-                                    console.log("Local file not equal to remote file.", fileStats.size, "!=", stats.remoteFileSize)
+                                    if (verbage) {
+                                        console.log("Local file not equal to remote file.", fileStats.size, "!=", stats.remoteFileSize)
+                                    }
+                                    ;
                                     continueDownload(res)
                                 }
                             })

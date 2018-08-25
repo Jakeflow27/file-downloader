@@ -28,7 +28,7 @@ Download files with node.js
 ### Options
     All options are optional.
     
-    cli-download : Boolean, show a download progress, Default: false
+    progress:      Boolean, show a cli download progress bar, Default: false
     start :        Boolean, false to start later with Downloader.start(), Default: true
     filePath :     String,  path for the file to be downloaded to includeing file name, Default: (parse url)
     resume :       Boolean, try to resume the download on failure, Default: true
@@ -36,4 +36,5 @@ Download files with node.js
     userAgent:     String,  custom userAgent, Default: chrome,ie,safari+node ua
     overwrite:     Boolean, force the download even if an equal sized file with the same name exists, Default:false
     autoUnzip:     Boolean, if the file is a zip, extract the contents? Default: true
+    verbage:       Boolean, log to console actions, Default: false
     
