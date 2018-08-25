@@ -11,19 +11,19 @@ Download files with node.js
     var options = {"cli-progress":true};
     
     new Downloader(url,options,function(stats){
-        console.log("Downloaded", stats.url ,"to", stats.filePath, "in", stats.time, "seconds.\n");
+        console.log("Downloaded", stats.url ,"to", stats.filePath, "in", stats.time, "seconds.\n\n");
         console.log(stats);
     })
     
     Output:
     
-    Downloaded http://www.dla.mil/Portals/104/Documents/InformationOperations/LogisticsInformationServices/FOIA/FCAN-SEGK.zip?ver=2018-08-02-144216-620 to C:\Users\admin\WebstormProjects\file-downloader\file-downloader\FCAN-SEGK.zip in 11.172 seconds.
+    Downloaded http://www.scrabbleplayers.org/words/10-15-20030401.txt to C:\Users\admin\WebstormProjects\file-downloader\file-downloader\10-15-20030401.txt in 1.673 seconds.
     
-    { time: 11.172,
-      filePath: 'C:\\Users\\admin\\WebstormProjects\\file-downloader\\file-downloader\\FCAN-SEGK.zip',
-      url: 'http://www.dla.mil/Portals/104/Documents/InformationOperations/LogisticsInformationServices/FOIA/FCAN-SEGK.zip?ver=2018-08-02-144216-620',
-      bytesDownloaded: 5853028,
-      remoteFileSize: 5853028 }
+    { time: 1.673,
+      filePath: 'C:\\Users\\admin\\WebstormProjects\\file-downloader\\file-downloader\\10-15-20030401.txt',
+      url: 'http://www.scrabbleplayers.org/words/10-15-20030401.txt',
+      bytesDownloaded: 611800,
+      remoteFileSize: 616898 }
 
 ### Options
     All options are optional.
@@ -35,4 +35,5 @@ Download files with node.js
     retries:       Int,     number of retries Default: infinite
     userAgent:     String,  custom userAgent, Default: chrome,ie,safari+node ua
     overwrite:     Boolean, force the download even if an equal sized file with the same name exists, Default:false
+    autoUnzip:     Boolean, if the file is a zip, extract the contents? Default: true
     
