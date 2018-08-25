@@ -1,0 +1,29 @@
+{
+  "name": "file-downloader",
+  "version": "1.0.0",
+  "description": "download files with node.js",
+  "main": "downloader.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Jakeflow27/file-downloader.git"
+  },
+  "keywords": [
+    "file",
+    "download",
+    "node.js"
+  ],
+  "author": "jakeflow@gmail.com",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Jakeflow27/file-downloader/issues"
+  },
+  "homepage": "https://github.com/Jakeflow27/file-downloader#readme",
+  "dependencies": {
+    "cli-progress": "^2.1.0",
+    "request": "^2.88.0",
+    "unzip": "^0.1.11"
+  }
+}
