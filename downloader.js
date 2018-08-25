@@ -143,7 +143,7 @@ function Downloader(fileUrl, options, callback) {
     }
 
     function start() {
-        // console.log(fileUrl,"=>",filePath);
+        if(verbage){console.log(fileUrl,"=>",filePath)};
         var r = request(rOptions)
             .on('response', function (res) {
                 stats.remoteFileSize = parseInt(res.headers['content-length'], 10);
