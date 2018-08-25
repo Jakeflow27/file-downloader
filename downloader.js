@@ -52,7 +52,8 @@ function Downloader(fileUrl, options, callback) {
         method: 'GET',
         uri: fileUrl,
         forever: true, // http keep-alive
-        headers: {"User-Agent": userAgent}
+        headers: {"User-Agent": userAgent},
+        gzip: true
     };
 
     function fin() {
@@ -104,13 +105,14 @@ function Downloader(fileUrl, options, callback) {
     }
 
     function continueDownload(res) {
+        if(verbage){console.log(fileUrl,"=>",filePath)};
+
         var file = fs.createWriteStream(filePath);
 
         if (options.progress) {
             var bar = new Progress.Bar({}, Progress.Presets.shades_classic);
             bar.start(stats.remoteFileSize, 0);
         }
-
         res.on('data', function (chunk) {
             file.write(chunk, 'binary', function () {
                 stats.bytesDownloaded += chunk.length;
@@ -144,12 +146,11 @@ function Downloader(fileUrl, options, callback) {
     }
 
     function start() {
-        if(verbage){console.log(fileUrl,"=>",filePath)};
         var r = request(rOptions)
             .on('response', function (res) {
                 stats.remoteFileSize = parseInt(res.headers['content-length'], 10);
                 if (overwrite) {
-                    continueDownload(res)
+                    continueDownload(r)
                 }
                 else {
                     // check if there's a local file already
@@ -170,12 +171,12 @@ function Downloader(fileUrl, options, callback) {
                                         console.log("Local file not equal to remote file.", fileStats.size, "!=", stats.remoteFileSize)
                                     }
                                     ;
-                                    continueDownload(res)
+                                    continueDownload(r)
                                 }
                             })
                         }
                         else {
-                            continueDownload(res)
+                            continueDownload(r)
                         }
                     });
                 }
