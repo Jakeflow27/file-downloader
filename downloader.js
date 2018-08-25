@@ -19,7 +19,7 @@ function getFileName(fileUrl) {
 }
 
 function getDownloadLocation(url) {
-    return path.join(__dirname, getFileName(url))
+    return path.join(process.cwd(), getFileName(url))
 }
 
 function Downloader(fileUrl, options, callback) {
