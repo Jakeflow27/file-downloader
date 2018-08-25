@@ -5,7 +5,7 @@ Download files with node.js
     npm install Jakeflow27/file-downloader
 
 ## Usage
-    var Downloader = require("./downloader");
+    var Downloader = require("file-downloader");
     
     var url = "http://www.scrabbleplayers.org/words/10-15-20030401.txt";
     var options = {"cli-progress":true};
