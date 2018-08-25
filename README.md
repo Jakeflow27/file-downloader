@@ -30,7 +30,8 @@ Download files with node.js
     
     progress:      Boolean, show a cli download progress bar, Default: false
     start :        Boolean, false to start later with Downloader.start(), Default: true
-    filePath :     String,  path for the file to be downloaded to includeing file name, Default: (parse url)
+    fileName :     String,  a name for the file, Default: (parse url)
+    downloadFolder:String,  a folder path for the downloads, Default: process.cwd()
     resume :       Boolean, try to resume the download on failure, Default: true
     retries:       Int,     number of retries Default: infinite
     userAgent:     String,  custom userAgent, Default: chrome,ie,safari+node ua

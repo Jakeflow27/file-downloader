@@ -18,17 +18,15 @@ function getFileName(fileUrl) {
     return fileUrl.split('/').pop().split('#')[0].split('?')[0];
 }
 
-function getDownloadLocation(url) {
-    return path.join(process.cwd(), getFileName(url))
-}
-
 function Downloader(fileUrl, options, callback) {
     var startTime = new Date();
 
     if (!options) {
         options = {}
     }
-    var filePath = options.filePath || getDownloadLocation(fileUrl);
+    var fileName = options.fileName || getFileName(fileUrl);
+    var downloadFolder = options.downloadFolder || process.cwd();
+    var filePath = path.join(downloadFolder,fileName);
     var autoStart = options.start || true;
     var resume = options.resume || true;
     var retryInterval = options.retryInterval || 5000;
