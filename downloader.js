@@ -129,23 +129,22 @@ function Downloader(fileUrl, options, callback) {
 
         r=request(rOptions)
             .on('data', function (chunk) {
-            file.write(chunk, 'binary', function () {
+                file.write(chunk, 'binary', function () {});
                 stats.bytesDownloaded += chunk.length;
                 if (bar) {
                     bar.update(stats.bytesDownloaded)
                 }
-            });
             }).on('end', function () {
                 if (stats.bytesDownloaded==stats.remoteFileSize){
                     if (bar) {bar.stop()}
                     if (verbage) {console.log("Download complete.")};
+                    file.end();
                     // the callback will commence upon file write complete.
                 }
                 else{
                     if(verbage){console.log("connection interrupted")}
                     continueDownload()
                 }
-                file.end();
             }).on('error', function (err) {
                 throw err;
                 if (bar) { bar.stop()};
