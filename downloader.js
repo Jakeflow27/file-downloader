@@ -141,11 +141,11 @@ function Downloader(fileUrl, options, callback) {
                 }
                 else{
                     if(verbage){console.log("connection interrupted")}
-                    continueDownload()
+                    setTimeout(continueDownload,2000)
                 }
             }).on('error', function (err) {
-                throw err;
-                if (bar) { bar.stop()};
+                console.log(err);
+                setTimeout(continueDownload,2000)
             });
     }
 
