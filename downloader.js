@@ -153,7 +153,8 @@ function Downloader(fileUrl, options, callback) {
         fs.exists(filePath+".temp",function(exists){
             if(exists){
                 if(verbage){"temp file found, resuming download"}
-                fs.stat(filePath+".temp",function(fileStats){
+                fs.stat(filePath+".temp",function(err,fileStats){
+                    if (err) throw err;
                     stats.bytesDownloaded=fileStats.size;
                     resumable=true;
                     rOptions.headers["Range"]= "bytes="+String(stats.bytesDownloaded)+"-";
@@ -176,6 +177,7 @@ function Downloader(fileUrl, options, callback) {
                     }
                     else {
                         fs.stat(filePath, function (err, fileStats) {
+                            if (err) throw err;
                             if (fileStats.size == stats.remoteFileSize) {
                                 if (verbage) {
                                     console.log("Local file equal to remote file.", fileStats.size, "==", stats.remoteFileSize)
